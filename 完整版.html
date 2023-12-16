@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app"></div>
+    <script src="./111.js"></script>
+
+    <style>
+        .html,
+        body,
+        #app {
+            padding: 0;
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+    <script>
+
+
+        const scaleFactor = 10000;
+
+        let canvasSize = getSize();
+        const referencePoint = { lng: 120.02254, lat: 31.45883 };
+
+        function latLngToPoint(lat, lng) {
+            const x = (lng - referencePoint.lng) * scaleFactor + canvasSize.width / 2;
+            const y = (lat - referencePoint.lat) * scaleFactor + canvasSize.height / 2;
+            return { x, y };
+        }
+
+        function getSize() {
+            const app = document.getElementById('app');
+            const width = app.clientWidth;
+            const height = app.clientHeight;
+            return { width, height };
+        }
+
+        function syncFullSize() {
+            const { width, height } = getSize();
+            canvasSize = { width, height };
+            stage.width(width);
+            stage.height(height);
+            stage.batchDraw();
+        }
+
+        function initPolygon(
+            data,
+            color,
+            strokeWidth,
+            closed = true,
+            dash,
+            type
+        ) {
+            console.log(data.flat())
+            if (type) {
+                return new Konva.Arrow({
+                    x: data.flat()[0],
+                    y: data.flat()[1],
+                    points: data.flat(),
+                    strokeWidth: strokeWidth,
+                    fill: color, // 箭头填充色与线条颜色相同
+                    pointerLength: 40,
+                    pointerWidth: 40,
+                });
+            } else {
+                return new Konva.Line({
+                    points: data.flat(),
+                    stroke: color,
+                    strokeWidth: strokeWidth,
+                    closed: closed,
+                    dash: dash,
+                });
+            }
+
+        }
+
+
+
+        window.addEventListener('resize', syncFullSize);
+
+        const [cityPolygonData, fullRouterData, currentRouterData] = [
+            [
+                { lng: 120.02254, lat: 31.45883 },
+                { lng: 120.02838, lat: 31.44653 },
+                { lng: 120.03113, lat: 31.43306 },
+                { lng: 120.03525, lat: 31.41812 },
+                { lng: 120.04452, lat: 31.41021 },
+                { lng: 120.05894, lat: 31.40317 },
+                { lng: 120.06718, lat: 31.40493 },
+                { lng: 120.06168, lat: 31.4231 },
+                { lng: 120.05447, lat: 31.44682 },
+                { lng: 120.03696, lat: 31.4764 },
+                { lng: 120.03765, lat: 31.47611 },
+                { lng: 120.02941, lat: 31.47787 },
+                { lng: 120.02289, lat: 31.4726 },
+                { lng: 120.02014, lat: 31.4641 },
+            ].map((item) => {
+                const result = latLngToPoint(item.lat, item.lng);
+                return [result.x, result.y];
+            }),
+            [
+                { lng: 120.02941, lat: 31.47611 },
+                { lng: 120.02907, lat: 31.46762 },
+                { lng: 120.0325, lat: 31.45532 },
+                { lng: 120.03422, lat: 31.44565 },
+                { lng: 120.03731, lat: 31.42749 },
+                { lng: 120.04143, lat: 31.41929 },
+                { lng: 120.04589, lat: 31.40933 },
+                { lng: 120.0555, lat: 31.4061 },
+                { lng: 120.06065, lat: 31.4061 },
+                { lng: 120.02941, lat: 31.47611 },
+                { lng: 120.02907, lat: 31.46762 },
+                { lng: 120.0325, lat: 31.45532 },
+                { lng: 120.03422, lat: 31.44565 },
+                { lng: 120.03731, lat: 31.42749 },
+                { lng: 120.04143, lat: 31.41929 },
+                { lng: 120.04589, lat: 31.40933 },
+                { lng: 120.0555, lat: 31.4061 },
+                { lng: 120.06065, lat: 31.4061 },
+            ].map((item) => {
+                const result = latLngToPoint(item.lat, item.lng);
+                return [result.x, result.y];
+            }),
+            [
+                { lng: 120.02804, lat: 31.47084 },
+                { lng: 120.02907, lat: 31.45678 },
+                { lng: 120.03284, lat: 31.4521 },
+                { lng: 120.03422, lat: 31.43979 },
+                { lng: 120.03628, lat: 31.43071 },
+                { lng: 120.04074, lat: 31.42017 },
+                { lng: 120.04555, lat: 31.40991 },
+                { lng: 120.05688, lat: 31.40317 },
+                { lng: 120.06031, lat: 31.40669 },
+            ].map((item) => {
+                const result = latLngToPoint(item.lat, item.lng);
+                return [result.x, result.y];
+            }),
+        ];
+
+        const stage = new Konva.Stage({
+            container: 'app',
+            width: 800,
+            height: 600,
+        });
+
+        const layer = new Konva.Layer();
+
+        // 绘制 cityPolygon 和 fullRouter
+        const cityPolygon = initPolygon(cityPolygonData, 'green', 1, true);
+        const fullRouter = initPolygon(fullRouterData, 'red', 12, true, [1, 12]);
+
+
+        fullRouterData.forEach((point, index) => {
+            if (index < fullRouterData.length - 1) {
+                const currentPoint = fullRouterData[index];
+                const nextPoint = fullRouterData[index + 1];
+                // 检查 y 轴上的转折
+                if (currentPoint[1] !== nextPoint[1]) {
+                    // 创建圆圈
+                    const circle = new Konva.Circle({
+                        x: currentPoint[0],
+                        y: currentPoint[1],
+                        radius: 10,
+                        fill: 'rgb(68,114,196)',
+                        stroke: 'black',
+                        strokeWidth: 3,
+                    });
+                    layer.add(circle)
+                }
+            }
+        });
+        layer.add(cityPolygon);
+        layer.add(fullRouter);
+        const rectLine = new Konva.Line({
+            points: [100, 100, 150, 100, 150, 150, 100, 150, 100, 100, 125, 85, 150, 100],
+            fill: 'rgb(112,48,160)',
+            lineJoin: 'round',
+            lineCap: 'round',
+            closed: true,
+        });
+        const currentRouter = initPolygon([], 'blue', 10, false, [1, 12], 'arrow');
+        const currentRouter1 = initPolygon([], 'black', 10, false, );
+        layer.add(currentRouter1);
+        layer.add(currentRouter);
+       
+        // layer.add(rectLine);
+
+        let currentRouterIndex = 0;
+
+        function calculateNorthAngle(
+            start,
+            end
+        ) {
+            // 计算两点之间的角度
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            let angle = Math.atan2(-dy, dx); // 取负 dy 因为 y 轴向下增长
+
+            // 转换角度使正北为 0 度
+            angle = (angle + Math.PI / 2) % (2 * Math.PI);
+
+            // 将弧度转换为度
+            return (angle * 180) / Math.PI;
+        }
+
+        function rotateLayerToNorth(
+            lastPoint,
+            secondLastPoint
+        ) {
+            const angleDeg = calculateNorthAngle(secondLastPoint, lastPoint);
+
+            // 计算旋转所需的角度
+            const rotation = 90 + angleDeg + -90;
+            // 旋转整个层
+            layer.rotation(rotation);
+            // 移动最后一个点到屏幕中心
+            layer.offsetX(lastPoint.x);
+
+            layer.offsetY(lastPoint.y);
+            layer.x(canvasSize.width / 2);
+            layer.y(canvasSize.height / 2);
+            rectLine.setPosition({ x: lastPoint.x - 120, y: lastPoint.y - 150 })
+            // rectLine.rotation(rotation);
+
+            layer.batchDraw();
+        }
+
+        setInterval(() => {
+            const currentIndex = currentRouterIndex % currentRouterData.length;
+            const newPoints = currentRouterData.slice(0, currentIndex + 1).flat();
+            currentRouter.points(newPoints);
+            currentRouter1.points(newPoints);
+
+            // rectLine.setPosition({ x: newPoints[newPoints.length - 1] + 45, y: newPoints[newPoints.length - 2] - 170 });
+            if (currentRouterIndex > 0) {
+                const lastPoint = newPoints.slice(-4, -2); // 倒数第二个点
+                const secondLastPoint = newPoints.slice(-2); // 最后一个点
+                rotateLayerToNorth(
+                    { x: lastPoint[0], y: lastPoint[1] },
+                    { x: secondLastPoint[0], y: secondLastPoint[1] }
+                );
+            }
+
+            currentRouterIndex++;
+        }, 400);
+
+        stage.add(layer);
+        syncFullSize();
+
+    </script>
+</body>
+
+</html>

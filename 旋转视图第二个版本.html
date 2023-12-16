@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="./111.js"></script>
+<div id="app"></div>
+<style>
+    .html,
+    body,
+    #app {
+        padding: 0;
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+</style>
+
+<body>
+    <script>
+
+        const [backgroundData, fullRouter, currentRouter] = [
+            [
+                { lng: 120.02254, lat: 31.45883 },
+                { lng: 120.02838, lat: 31.44653 },
+                { lng: 120.03113, lat: 31.43306 },
+                { lng: 120.03525, lat: 31.41812 },
+                { lng: 120.04452, lat: 31.41021 },
+                { lng: 120.05894, lat: 31.40317 },
+                { lng: 120.06718, lat: 31.40493 },
+                { lng: 120.06168, lat: 31.4231 },
+                { lng: 120.05447, lat: 31.44682 },
+                { lng: 120.03696, lat: 31.4764 },
+                { lng: 120.03765, lat: 31.47611 },
+                { lng: 120.02941, lat: 31.47787 },
+                { lng: 120.02289, lat: 31.4726 },
+                { lng: 120.02014, lat: 31.4641 },
+            ],
+            [
+                { lng: 120.02941, lat: 31.47611 },
+                { lng: 120.02907, lat: 31.46762 },
+                { lng: 120.0325, lat: 31.45532 },
+                { lng: 120.03422, lat: 31.44565 },
+                { lng: 120.03731, lat: 31.42749 },
+                { lng: 120.04143, lat: 31.41929 },
+                { lng: 120.04589, lat: 31.40933 },
+                { lng: 120.0555, lat: 31.4061 },
+                { lng: 120.06065, lat: 31.4061 },
+                { lng: 120.02941, lat: 31.47611 },
+                { lng: 120.02907, lat: 31.46762 },
+                { lng: 120.0325, lat: 31.45532 },
+                { lng: 120.03422, lat: 31.44565 },
+                { lng: 120.03731, lat: 31.42749 },
+                { lng: 120.04143, lat: 31.41929 },
+                { lng: 120.04589, lat: 31.40933 },
+                { lng: 120.0555, lat: 31.4061 },
+                { lng: 120.06065, lat: 31.4061 },
+            ],
+            [
+                { lng: 120.02804, lat: 31.47084 },
+                { lng: 120.02907, lat: 31.45678 },
+                { lng: 120.03284, lat: 31.4521 },
+                { lng: 120.03422, lat: 31.43979 },
+                { lng: 120.03628, lat: 31.43071 },
+                { lng: 120.04074, lat: 31.42017 },
+                { lng: 120.04555, lat: 31.40991 },
+                { lng: 120.05688, lat: 31.40317 },
+                { lng: 120.06031, lat: 31.40669 },
+            ],
+        ];
+
+        const scaleFactor = 10000;
+
+        let canvasSize = getSize();
+        const referencePoint = { lat: 31.43, lng: 120.03 };
+
+        function latLngToPoint(lat, lng) {
+            const x = (lng - referencePoint.lng) * scaleFactor + canvasSize.width / 2;
+            const y = (lat - referencePoint.lat) * scaleFactor + canvasSize.height / 2;
+            return { x, y };
+        }
+
+        function getSize() {
+            const app = document.getElementById('app');
+            const width = app.clientWidth;
+            const height = app.clientHeight;
+            return { width, height };
+        }
+
+        function syncFullSize() {
+            const { width, height } = getSize();
+            canvasSize = { width, height };
+            stage.width(width);
+            stage.height(height);
+            stage.batchDraw();
+        }
+
+        function animate(callback, interval) {
+            let lastTime = Date.now();
+            let timer = null;
+            const animateCallback = () => {
+                const now = Date.now();
+                if (now - lastTime > interval) {
+                    callback();
+                    lastTime = now;
+                }
+                timer = requestAnimationFrame(animateCallback);
+            };
+            timer = requestAnimationFrame(animateCallback);
+            return () => {
+                if (timer) {
+                    cancelAnimationFrame(timer);
+                }
+            };
+        }
+
+        // declare type GeometryPoint = {
+        //     lat: number;
+        //     lng: number;
+        // };
+        const group = new Konva.Group({
+            x: 0,
+            y: 0,
+        });
+
+
+        function initDispatch(
+            background,
+            fullRouter
+        ) {
+            // 将 background 与 fullRouter 创建出对应的图形
+            const backgroundPolygon = new Konva.Line({
+                points: background
+                    .map((item) => {
+                        const { x, y } = latLngToPoint(item.lat, item.lng);
+                        return [x, y];
+                    })
+                    .flat(),
+                fill: 'rgb(128,172,147)',
+                stroke: 'rgb(112,48,160)',
+                dash: [2, 6],
+                strokeWidth: 1,
+                closed: true,
+                draggable: true
+            })
+            const fullRouterPolygon = new Konva.Line({
+                points: fullRouter
+                    .map((item) => {
+                        const { x, y } = latLngToPoint(item.lat, item.lng);
+                        return [x, y];
+                    })
+                    .flat(),
+                stroke: 'rgb(255,23,23)',
+                strokeWidth: 3,
+                closed: true,
+                dash: [2, 6],
+                draggable: true
+            });
+
+            fullRouter.forEach((point, index) => {
+                if (index < fullRouter.length - 1) {
+                    const currentPoint = latLngToPoint(point.lat, point.lng);
+                    const nextPoint = latLngToPoint(fullRouter[index + 1].lat, fullRouter[index + 1].lng);
+                    // 检查 y 轴上的转折
+                    if (currentPoint.y !== nextPoint.y) {
+                        // 创建圆圈
+                        const circle = new Konva.Circle({
+                            x: currentPoint.x,
+                            y: currentPoint.y,
+                            radius: 10,
+                            fill: 'rgb(68,114,196)',
+                            stroke: 'black',
+                            strokeWidth: 3,
+                            draggable: true
+                        });
+                        circle.zIndex(10);
+                        group.add(circle)
+                    }
+                }
+
+            });
+            group.add(backgroundPolygon);
+            group.add(fullRouterPolygon);
+            return group;
+        }
+
+
+
+        // : number[]
+        function calculateCenterOfPolygon(points) {
+            const xPoints = points.filter((_, index) => index % 2 === 0);
+            const yPoints = points.filter((_, index) => index % 2 !== 0);
+            const minX = Math.min(...xPoints);
+            const maxX = Math.max(...xPoints);
+            const minY = Math.min(...yPoints);
+            const maxY = Math.max(...yPoints);
+            return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+        }
+
+        function processDispatch(
+            background,
+            // : Konva.Group,
+            routerPolygon,
+            // : Konva.Line,
+            currentRouter,
+            // : GeometryPoint[]
+        ) {
+            // 更新 currentRouterPolygon 的点
+            const newPoints = currentRouter
+                .map((p) => {
+                    const { x, y } = latLngToPoint(p.lat, p.lng);
+                    return [x, y];
+                })
+                .flat();
+            routerPolygon.points(newPoints);
+            if (currentRouter.length >= 2) {
+                const lastPoint = currentRouter[currentRouter.length - 1];
+                const secondLastPoint = currentRouter[currentRouter.length - 2];
+                const lastPointScreen = latLngToPoint(lastPoint.lat, lastPoint.lng);
+                const secondLastPointScreen = latLngToPoint(
+                    secondLastPoint.lat,
+                    secondLastPoint.lng
+                );
+                // 保持最后一个点位于画布中心
+                const screenCenter = { x: canvasSize.width / 2, y: canvasSize.height / 2 };
+                background.x(screenCenter.x - lastPointScreen.x);
+                background.y(screenCenter.y - lastPointScreen.y);
+           
+           
+                // 计算最后一条线段，相对于正北方向的角度
+                const angle = Math.atan2(
+                    lastPointScreen.y - secondLastPointScreen.y,
+                    lastPointScreen.x - secondLastPointScreen.x
+                );
+                rectLine.rotation(angle)
+                // TODO 因为背景是按照 0,0 为中心点，所以需要将角度转换为相对于 0,0 的角度
+            }
+        }
+        window.addEventListener('resize', syncFullSize);
+        const stage = new Konva.Stage({
+            container: 'app',
+            width: 800,
+            height: 600,
+        });
+
+        function updateRectLinePosition() {
+            const center = calculateCenterOfPolygon(currentRouterPolygon.points());
+            rectLine.x(center.x - rectLine.width() / 2);
+            rectLine.y(center.y - rectLine.height() / 2);
+        }
+        const rectLine = new Konva.Line({
+            points: [100, 100, 150, 100, 150, 150, 100, 150, 100, 100, 125, 85, 150, 100],
+            fill: 'rgb(112,48,160)',
+            lineJoin: 'round',
+            lineCap: 'round',
+            closed: true,
+        });
+
+        const layer = new Konva.Layer();
+
+        const background = initDispatch(backgroundData, fullRouter);
+        layer.add(background);
+
+        const currentRouterPolygon = new Konva.Line({
+            points: [],
+            stroke: 'blue',
+            strokeWidth: 1,
+        });
+        background.add(rectLine)
+        background.add(currentRouterPolygon);
+
+        // 同步更新 currentRouterPolygon，每 2 秒更新一次
+        let currentRouterIndex = 0;
+        animate(() => {
+            const currentIndex = currentRouterIndex % currentRouter.length;
+            const steps = currentRouter.slice(0, currentIndex + 1);
+            processDispatch(background, currentRouterPolygon, steps);
+            updateRectLinePosition()
+            currentRouterIndex++;
+            stage.batchDraw();
+        }, 266);
+        stage.add(layer);
+        window.requestAnimationFrame(() => {
+            stage.batchDraw();
+        });
+        syncFullSize();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="./111.js"></script>
+    <meta charset="utf-8" />
+    <title>Konva Line Spline Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <div id="container"></div>
+    <script>
+        class create {
+            constructor(Fence, Route, WebBoat) {
+                this.Fence = Fence
+                this.Route = Route
+                this.WebBoat = WebBoat
+            }
+        }
+        const newData = new create([
+            { lng: 120.02254, lat: 31.45883 },
+            { lng: 120.02838, lat: 31.44653 },
+            { lng: 120.03113, lat: 31.43306 },
+            { lng: 120.03525, lat: 31.41812 },
+            { lng: 120.04452, lat: 31.41021 },
+            { lng: 120.05894, lat: 31.40317 },
+            { lng: 120.06718, lat: 31.40493 },
+            { lng: 120.06168, lat: 31.4231 },
+            { lng: 120.05447, lat: 31.44682 },
+            { lng: 120.03696, lat: 31.4764 },
+            { lng: 120.03765, lat: 31.47611 },
+            { lng: 120.02941, lat: 31.47787 },
+            { lng: 120.02289, lat: 31.4726 },
+            { lng: 120.02014, lat: 31.4641 },
+        ], [
+            { lng: 120.02941, lat: 31.47611 },
+            { lng: 120.02907, lat: 31.46762 },
+            { lng: 120.0325, lat: 31.45532 },
+            { lng: 120.03422, lat: 31.44565 },
+            { lng: 120.03731, lat: 31.42749 },
+            { lng: 120.04143, lat: 31.41929 },
+            { lng: 120.04589, lat: 31.40933 },
+            { lng: 120.0555, lat: 31.4061 },
+            { lng: 120.06065, lat: 31.4061 },
+            { lng: 120.02941, lat: 31.47611 },
+            { lng: 120.02907, lat: 31.46762 },
+            { lng: 120.0325, lat: 31.45532 },
+            { lng: 120.03422, lat: 31.44565 },
+            { lng: 120.03731, lat: 31.42749 },
+            { lng: 120.04143, lat: 31.41929 },
+            { lng: 120.04589, lat: 31.40933 },
+            { lng: 120.0555, lat: 31.4061 },
+            { lng: 120.06065, lat: 31.4061 },
+        ], [
+            { lng: 120.02804, lat: 31.47084 },
+            { lng: 120.02907, lat: 31.45678 },
+            { lng: 120.03284, lat: 31.4521 },
+            { lng: 120.03422, lat: 31.43979 },
+            { lng: 120.03628, lat: 31.43071 },
+            { lng: 120.04074, lat: 31.42017 },
+            { lng: 120.04555, lat: 31.40991 },
+            { lng: 120.05688, lat: 31.40317 },
+            { lng: 120.06031, lat: 31.40669 },
+        ])
+        // 假设 stage 的尺寸
+        const stageWidth = window.innerWidth;
+        const stageHeight = window.innerHeight;
+        // 确定经纬度极值 由围栏数据来决定经纬度极值
+        const lngs = newData.Fence.map(p => p.lng);
+        const lats = newData.Fence.map(p => p.lat);
+        const lngMin = Math.min(...lngs);
+        const lngMax = Math.max(...lngs);
+        const latMin = Math.min(...lats);
+        const latMax = Math.max(...lats);
+
+        // 转换函数
+        function convertLatLngToXY(lng, lat) {
+            const x = ((lng - lngMin) / (lngMax - lngMin)) * stageWidth;
+            const y = ((latMax - lat) / (latMax - latMin)) * stageHeight;
+            return { x, y };
+        }
+        // 计算经纬度极值
+        function reserve(data) {
+            const lngs = data.map(p => p.lng);
+            const lats = data.map(p => p.lat);
+            // 转换坐标
+            const points = data.map(p => convertLatLngToXY(p.lng, p.lat));
+            return points
+        }
+        // 使用 Konva 绘制多边形
+        const stage = new Konva.Stage({
+            container: 'container',
+            width: stageWidth,
+            height: stageHeight,
+        });
+        const FenceLayer = new Konva.Layer();
+        stage.add(FenceLayer);
+
+        const polygon = new Konva.Line({
+            points: reserve(newData.Fence).flatMap(p => [p.x, p.y]),
+            fill: 'rgb(128,172,147)',
+            stroke: 'rgb(112,48,160)',
+            strokeWidth: 5,
+            closed: true,
+            dash: [10, 5]
+        });
+        FenceLayer.add(polygon);
+        FenceLayer.draw();
+        const RouteLayer = new Konva.Layer();
+
+        // 绘制路径
+        const line = new Konva.Line({
+            points: reserve(newData.Route).flatMap(p => [p.x, p.y]),
+            stroke: 'rgb(0,176,80)',
+            strokeWidth: 5,
+            lineJoin: 'bevel',
+            lineCap: 'butt',
+            tension: 0,
+            draggable: true
+
+        });
+        RouteLayer.add(line);
+        // 添加圆形
+        for (let i = 1; i < reserve(newData.Route).length - 1; i++) {
+            if (reserve(newData.Route)[i - 1].y !== reserve(newData.Route)[i].y
+                && reserve(newData.Route)[i].y !== 0 &&
+                reserve(newData.Route)[i].y !== window.innerHeight) {
+                const circle = new Konva.Circle({
+                    x: reserve(newData.Route)[i].x,
+                    y: reserve(newData.Route)[i].y,
+                    radius: 10,
+                    fill: 'rgb(68,114,196)',
+                    stroke: 'black',
+                    strokeWidth: 3
+                });
+                RouteLayer.add(circle);
+            }
+        }
+        RouteLayer.draw();
+        stage.add(RouteLayer);
+
+        // 将第一个点转换成屏幕坐标并添加到 line2 的点集中
+        const firstPoint = [reserve(newData.WebBoat)[0], reserve(newData.WebBoat)[1]];
+        const WebBoatLayer = new Konva.Layer()
+        const line2 = new Konva.Line({
+            // points: reserve(newData.WebBoat).flatMap(p => [p.x, p.y]),
+            points: firstPoint.flatMap(p => [p.x, p.y]),
+            stroke: 'yellow',
+            strokeWidth: 5,
+            dash: [1, 10],
+            lineJoin: 'round',
+            lineCap: 'round',
+            tension: 1
+        });
+        WebBoatLayer.add(line2)
+        // stage.add(WebBoatLayer)
+        const groupLayer = new Konva.Layer()
+        const group = new Konva.Group({
+            // draggable: true
+        });
+        // // 计算矩形和箭头的位置和方向
+        let line2Index = 1;
+        // // 创建矩形
+        const rectLine = new Konva.Line({
+            points: [100, 100, 150, 100, 150, 150, 100, 150, 100, 100, 125, 85, 150, 100],
+            fill: 'rgb(112,48,160)',
+            lineJoin: 'round',
+            lineCap: 'round',
+            closed: true,
+        });
+        group.add(rectLine);
+        //  绘制箭头
+        const arrow = new Konva.Arrow({
+            x: 125,
+            y: 100,
+            points: [0, 0, 0, -50],  // 这将创建一个向上的箭头
+            pointerLength: 20,
+            pointerWidth: 20,
+            fill: 'rgb(112,48,160)',
+            stroke: 'rgb(112,48,160)',
+            strokeWidth: 3
+        });
+        group.add(arrow);
+        groupLayer.add(group)
+        // const arr = firstPoint.flatMap(p => [p.x, p.y])
+        // group.setPosition({ x: arr[0], y: arr[1] })
+        // group.rotation(angle + 60);
+
+        // 设置动画起始点
+        // 创建动画函数
+        // const line2Anim = new Konva.Animation(function (frame) {
+        //     if (line2Index < reserve(newData.WebBoat).length - 1) {
+        //         // 获取当前点和下一个点
+        //         const currentPoint = reserve(newData.WebBoat)[line2Index];
+        //         const nextPoint = reserve(newData.WebBoat)[line2Index + 1];
+        //         line2.lineJoin = 'round'
+        //         line2.lineCap = 'round'
+        //         line2.points([...line2.points(), nextPoint.x, nextPoint.y]);
+        //     } else {
+        //         // 如果到达路径的末端，停止动画
+        //         line2Anim.stop();
+        //     }
+        //     // 绘制更新
+        //     WebBoatLayer.batchDraw();
+        // }, WebBoatLayer);
+        // 创建动画函数
+        // let index = 0; // 路径数组的起始索引
+        // const anim = new Konva.Animation(function (frame) {
+        //     if (index < reserve(newData.WebBoat).length - 1) {
+        //         const currentPoint = reserve(newData.WebBoat)[index];
+        //         const nextPoint = reserve(newData.WebBoat)[index + 1];
+        //         const midPointX = currentPoint.x
+        //         const midPointY = currentPoint.y
+        //         // 移动组到中点
+        //         group.setPosition({ x: midPointX + 66, y: midPointY - 200 });
+
+        //         // 计算角度
+        //         const angleDeg = Math.atan2(nextPoint.y - currentPoint.y, nextPoint.x - currentPoint.x) * 180 / Math.PI;
+        //         console.log(angleDeg)
+        //         // 旋转组
+        //         group.rotation(angleDeg + 60);
+        //     } else {
+        //         // 如果到达路径的末端，停止动画
+        //         anim.stop();
+        //     }
+        //     // 绘制更新
+        //     groupLayer.batchDraw();
+        // }, groupLayer);
+
+
+        // // 计算角度
+        const lastPoint = reserve(newData.WebBoat)[reserve(newData.WebBoat).length - 1];
+        const secondLastPoint = reserve(newData.WebBoat)[reserve(newData.WebBoat).length - 2];
+
+        const dx = lastPoint.x - secondLastPoint.x;
+        const dy = lastPoint.y - secondLastPoint.y;
+
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        // 初始化 line2 和 group 的位置
+        const initialPoint = convertLatLngToXY(newData.WebBoat[0].lng, newData.WebBoat[0].lat);
+        line2.points([initialPoint.x, initialPoint.y]);
+        group.setPosition({ x: initialPoint.x, y: initialPoint.y });
+        group.rotation(angle + 60)
+        // const anim = new Konva.Animation(function (frame) {
+        //     if (line2Index < newData.WebBoat.length) {
+        //         // 获取当前点和下一个点
+        //         const currentPoint = reserve(newData.WebBoat)[line2Index];
+        //         const nextPoint = convertLatLngToXY(newData.WebBoat[line2Index + 1]?.lng, newData.WebBoat[line2Index + 1].lat);
+        //         const angleDeg = Math.atan2(nextPoint.y - currentPoint.y, nextPoint.x - currentPoint.x) * 180 / Math.PI;
+        //         line2.lineJoin = 'round'
+        //         line2.lineCap = 'round'
+        //         group.setPosition({ x: nextPoint.x + 66, y: nextPoint.y - 150 });
+        //         group.rotation(angleDeg + 40)
+        //         line2.points([...line2.points(), nextPoint.x, nextPoint.y]);
+        //     } else {
+        //         // 停止动画
+        //         anim.stop();
+        //     }
+        //     // 绘制更新
+        //     WebBoatLayer.batchDraw();
+        //     groupLayer.batchDraw();
+        // }, WebBoatLayer, groupLayer);
+        // 动画的更新频率（毫秒）
+        const animationFrequency = 50;
+        const anim = new Konva.Animation(function (frame) {
+            if (line2Index < newData.WebBoat.length) {
+                // 计算下一个点的位置
+                const currentPoint = reserve(newData.WebBoat)[line2Index];
+                const nextPoint = convertLatLngToXY(newData.WebBoat[line2Index + 1].lng, newData.WebBoat[line2Index + 1].lat);
+                // 获取 line2 的当前最后一个点
+                let points = line2.points();
+                const lastPointX = points[points.length - 2];
+                const lastPointY = points[points.length - 1];
+                // 确定移动步骤
+                const stepX = (nextPoint.x - lastPointX) / (1000 / animationFrequency);
+                const stepY = (nextPoint.y - lastPointY) / (1000 / animationFrequency);
+                // 更新 line2 和 group 的位置
+                if (Math.abs(lastPointX - nextPoint.x) > Math.abs(stepX) || Math.abs(lastPointY - nextPoint.y) > Math.abs(stepY)) {
+                    points.push(lastPointX + stepX, lastPointY + stepY);
+                    line2.points(points);
+                    group.setPosition({ x: lastPointX + stepX + 45, y: lastPointY + stepY - 170 });
+                    const centerX = stageWidth / 2;
+                    const centerY = stageHeight / 2;
+                    FenceLayer.offsetX(stageWidth / 2 - stageWidth / 2);
+                    FenceLayer.offsetY(stageHeight / 2 - stageHeight / 2);
+                } else {
+                    line2.points([...line2.points(), nextPoint.x, nextPoint.y]);
+                    group.setPosition({ x: nextPoint.x + 45, y: nextPoint.y - 170 });
+                }
+                const angleDeg = Math.atan2(nextPoint.y - currentPoint.y, nextPoint.x - currentPoint.x) * 180 / Math.PI;
+                group.rotation(angleDeg + 40);
+                FenceLayer.rotation(angleDeg);
+            } else {
+                // 停止动画
+                anim.stop();
+            }
+            // 绘制更新
+            WebBoatLayer.batchDraw();
+            groupLayer.batchDraw();
+            FenceLayer.batchDraw();
+        }, WebBoatLayer, groupLayer);
+        // 启动动画
+        // 每秒移动到下一个点
+        // setInterval(function () {
+        //     line2Anim.start();
+        //     line2Index++;
+        // }, 1300);
+        setInterval(function () {
+            anim.start();
+            line2Index++;
+        }, 500);
+        stage.add(groupLayer)
+        stage.add(WebBoatLayer)
+    </script>
+</body>
+
+</html>
